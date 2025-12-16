@@ -105,11 +105,20 @@ func jwtInit(timeout int) {
 	}
 }
 
-func updateUser(c *gin.Context) {
+func updateUser(c *gin.Context, checkExist bool) {
 	responseBody := controller.ResponseBody{Msg: "success"}
 	defer controller.TimeCost(time.Now(), &responseBody)
 	username := c.DefaultPostForm("username", "admin")
 	pass := c.PostForm("password")
+	// 如果需要检查是否已存在（用于注册接口），则只有在管理员密码未设置时才允许操作
+	if checkExist {
+		existPass, _ := core.GetValue(fmt.Sprintf("%s_pass", username))
+		if existPass != "" {
+			responseBody.Msg = "user already exists, registration is not allowed"
+			c.JSON(403, responseBody)
+			return
+		}
+	}
 	err := core.SetValue(fmt.Sprintf("%s_pass", username), pass)
 	if err != nil {
 		responseBody.Msg = err.Error()
@@ -152,7 +161,9 @@ func Auth(r *gin.Engine, timeout int) *jwt.GinJWTMiddleware {
 		}
 	})
 	r.POST("/auth/login", authMiddleware.LoginHandler)
-	r.POST("/auth/register", updateUser)
+	r.POST("/auth/register", func(c *gin.Context) {
+		updateUser(c, true)
+	})
 	authO := r.Group("/auth")
 	authO.Use(authMiddleware.MiddlewareFunc())
 	{
@@ -170,7 +181,9 @@ func Auth(r *gin.Engine, timeout int) *jwt.GinJWTMiddleware {
 				})
 			}
 		})
-		authO.POST("/reset_pass", updateUser)
+		authO.POST("/reset_pass", func(c *gin.Context) {
+			updateUser(c, false)
+		})
 		authO.POST("/logout", authMiddleware.LogoutHandler)
 		authO.POST("/refresh_token", authMiddleware.RefreshHandler)
 	}
