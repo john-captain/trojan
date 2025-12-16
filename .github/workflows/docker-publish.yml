@@ -5,10 +5,11 @@ name: Docker
 # separate terms of service, privacy policy, and support
 # documentation.
 
+# 禁用自动触发，只保留手动触发
 on:
   workflow_dispatch: #github页面手动触发
-  push:
-    tags: [ 'v*' ]
+  # push:
+  #   tags: [ 'v*' ]
 
 env:
   # github.repository as <account>/<repo>

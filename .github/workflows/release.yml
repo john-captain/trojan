@@ -17,6 +17,19 @@ jobs:
         with:
           go-version: '1.21'
 
+      - name: Download frontend templates
+        run: |
+          # 从原项目的 trojan-web 仓库下载预构建的前端文件
+          mkdir -p web/templates
+          curl -L https://github.com/Jrohy/trojan-web/releases/latest/download/dist.zip -o dist.zip
+          unzip dist.zip -d web/templates/
+          # 如果解压后是 dist 目录，需要移动文件
+          if [ -d "web/templates/dist" ]; then
+            mv web/templates/dist/* web/templates/
+            rm -rf web/templates/dist
+          fi
+          ls -la web/templates/
+
       - name: Build for Linux AMD64
         run: |
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o trojan-linux-amd64 .
