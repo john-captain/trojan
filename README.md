@@ -59,7 +59,26 @@ docker run -it -d --name trojan --net=host --restart=always --privileged jrohy/t
 更新管理程序: `source <(curl -sL https://raw.githubusercontent.com/john-captain/trojan/master/install.sh)`
 
 ## 安全修复
-本仓库修复了 CVE-2024-55215 漏洞（未授权修改管理员密码）
+本仓库修复了 **CVE-2024-55215** 漏洞（未授权修改管理员密码）
+
+### 漏洞详情
+原项目的 `/auth/register` 接口在管理员账户创建后仍然可以被未授权用户访问，导致攻击者可以直接修改管理员密码。
+
+### 修复方案
+修改 `web/auth.go` 文件，在 `/auth/register` 接口中添加检查逻辑：
+- 只有当管理员密码**未设置**时（首次安装），才允许调用该接口
+- 如果管理员密码已存在，返回 `403 Forbidden` 拒绝请求
+
+### 修复后的行为
+| 场景 | 修复前 | 修复后 |
+|------|--------|--------|
+| 首次安装，设置管理员密码 | ✅ 允许 | ✅ 允许 |
+| 管理员已存在，未登录调用 `/auth/register` | ❌ 允许（漏洞） | ✅ 返回 403 拒绝 |
+| 已登录用户调用 `/auth/reset_pass` | ✅ 允许 | ✅ 允许 |
+
+### 参考
+- 漏洞 POC：[ainrm/Jrohy-trojan-unauth-poc](https://github.com/ainrm/Jrohy-trojan-unauth-poc)
+- 影响版本：v2.0.0 - v2.15.3
 
 ## 运行截图
 ![avatar](asset/1.png)
