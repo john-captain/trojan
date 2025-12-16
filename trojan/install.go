@@ -61,15 +61,16 @@ func InstallTrojan(version string) {
 // setupAcmeCron 设置acme.sh证书自动更新的cron任务
 // 确保证书更新后自动重启trojan-web服务
 func setupAcmeCron() {
-	// 检查是否有acme.sh的cron任务
-	cronList := util.ExecCommandWithResult("crontab -l 2>/dev/null")
-	if !strings.Contains(cronList, "acme") {
-		fmt.Println("未检测到acme.sh的cron任务，跳过设置")
+	// 检查 acme.sh 是否存在
+	if !util.IsExists("/root/.acme.sh/acme.sh") {
+		fmt.Println("未检测到acme.sh，跳过设置定时任务")
 		return
 	}
 
+	cronList := util.ExecCommandWithResult("crontab -l 2>/dev/null")
+
 	// 检查是否已经有包含trojan-web的正确cron任务
-	if strings.Contains(cronList, "trojan-web") && !strings.Contains(cronList, "trojan-web&") {
+	if strings.Contains(cronList, "trojan-web") && strings.Contains(cronList, "acme.sh") && !strings.Contains(cronList, "trojan-web&") {
 		fmt.Println("证书自动更新任务已正确配置")
 		return
 	}
@@ -84,11 +85,10 @@ func setupAcmeCron() {
 		localHour -= 24
 	}
 
-	// 移除旧的acme.sh cron任务，添加新的包含trojan-web重启的任务
 	// 新任务：先停止trojan-web，更新证书，再启动trojan-web
 	newCron := fmt.Sprintf(`0 %d * * * systemctl stop trojan-web; "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" > /dev/null; systemctl start trojan-web`, localHour)
 
-	// 使用sed删除旧的acme.sh任务，然后添加新任务
+	// 移除旧的acme.sh cron任务（如果有），然后添加新任务
 	util.ExecCommand("crontab -l 2>/dev/null | sed '/acme.sh/d' > /tmp/crontab.txt")
 	util.ExecCommand(fmt.Sprintf(`echo '%s' >> /tmp/crontab.txt`, newCron))
 	util.ExecCommand("crontab /tmp/crontab.txt")
