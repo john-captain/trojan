@@ -80,6 +80,21 @@ docker run -it -d --name trojan --net=host --restart=always --privileged jrohy/t
 - 漏洞 POC：[ainrm/Jrohy-trojan-unauth-poc](https://github.com/ainrm/Jrohy-trojan-unauth-poc)
 - 影响版本：v2.0.0 - v2.15.3
 
+## 其他修复
+
+### 证书自动更新问题（v2.15.5）
+**问题描述**：执行 `trojan tls` 安装证书后，证书到期不会自动更新。
+
+**原因分析**：
+- acme.sh 默认会安装 cron 任务来自动更新证书
+- 但默认的 cron 任务只更新证书文件，不会重启 trojan-web 服务
+- 导致即使证书更新了，trojan-web 仍然使用旧的（过期的）证书
+
+**修复方案**：
+- 在 `trojan tls` 执行完成后，自动设置正确的 cron 任务
+- 新的 cron 任务会在更新证书后自动重启 trojan-web 服务
+- 定时任务设置为每天北京时间凌晨 3 点执行
+
 ## 运行截图
 ![avatar](asset/1.png)
 ![avatar](asset/2.png)
