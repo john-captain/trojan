@@ -12,23 +12,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build frontend templates
+        run: |
+          # 克隆前端项目并构建
+          git clone https://github.com/Jrohy/trojan-web.git frontend
+          cd frontend
+          npm install
+          npm run build
+          cd ..
+          # 移动构建结果到 web/templates
+          mkdir -p web/templates
+          cp -r frontend/dist/* web/templates/
+          ls -la web/templates/
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
-
-      - name: Download frontend templates
-        run: |
-          # 从原项目的 trojan-web 仓库下载预构建的前端文件
-          mkdir -p web/templates
-          curl -L https://github.com/Jrohy/trojan-web/releases/latest/download/dist.zip -o dist.zip
-          unzip dist.zip -d web/templates/
-          # 如果解压后是 dist 目录，需要移动文件
-          if [ -d "web/templates/dist" ]; then
-            mv web/templates/dist/* web/templates/
-            rm -rf web/templates/dist
-          fi
-          ls -la web/templates/
 
       - name: Build for Linux AMD64
         run: |
