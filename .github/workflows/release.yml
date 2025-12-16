@@ -37,11 +37,21 @@ jobs:
 
       - name: Build for Linux AMD64
         run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o trojan-linux-amd64 .
+          VERSION=${GITHUB_REF#refs/tags/}
+          NOW=$(TZ=Asia/Shanghai date "+%Y%m%d-%H%M")
+          GO_VERSION=$(go version | awk '{print $3,$4}')
+          GIT_VERSION=$(git rev-parse HEAD)
+          LDFLAGS="-w -s -X 'trojan/trojan.MVersion=$VERSION' -X 'trojan/trojan.BuildDate=$NOW' -X 'trojan/trojan.GoVersion=$GO_VERSION' -X 'trojan/trojan.GitVersion=$GIT_VERSION'"
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o trojan-linux-amd64 .
 
       - name: Build for Linux ARM64
         run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o trojan-linux-arm64 .
+          VERSION=${GITHUB_REF#refs/tags/}
+          NOW=$(TZ=Asia/Shanghai date "+%Y%m%d-%H%M")
+          GO_VERSION=$(go version | awk '{print $3,$4}')
+          GIT_VERSION=$(git rev-parse HEAD)
+          LDFLAGS="-w -s -X 'trojan/trojan.MVersion=$VERSION' -X 'trojan/trojan.BuildDate=$NOW' -X 'trojan/trojan.GoVersion=$GO_VERSION' -X 'trojan/trojan.GitVersion=$GIT_VERSION'"
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "$LDFLAGS" -o trojan-linux-arm64 .
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
