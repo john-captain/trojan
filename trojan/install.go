@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	dockerInstallUrl = "https://docker-install.netlify.app/install.sh"
+	dockerInstallUrl = "https://get.docker.com"
 	dbDockerRun      = "docker run --name trojan-mariadb --restart=always -p %d:3306 -v /home/mariadb:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=%s -e MYSQL_ROOT_HOST=%% -e MYSQL_DATABASE=trojan -d mariadb:10.2"
 )
 
@@ -36,7 +36,18 @@ func InstallMenu() {
 // InstallDocker 安装docker
 func InstallDocker() {
 	if !util.CheckCommandExists("docker") {
-		util.RunWebShell(dockerInstallUrl)
+		fmt.Println("正在安装 Docker...")
+		// 使用 Docker 官方安装脚本
+		util.ExecCommand("curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && rm get-docker.sh")
+		// 启动 Docker 服务
+		util.SystemctlStart("docker")
+		util.SystemctlEnable("docker")
+		// 验证安装
+		if util.CheckCommandExists("docker") {
+			fmt.Println("Docker 安装成功!")
+		} else {
+			fmt.Println("Docker 安装失败，请手动安装")
+		}
 		fmt.Println()
 	}
 }
